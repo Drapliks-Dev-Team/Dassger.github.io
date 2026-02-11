@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dassger | P2P Multilingual</title>
+    <title>Dassger | Fixed & Stable</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -13,24 +13,26 @@
             --radius: 16px; --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
 
         /* --- AUTH --- */
         #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .auth-card { background: var(--surface); padding: 40px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #222; }
+        
         .lang-switch { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .lang-btn { background: #222; color: #fff; padding: 5px 15px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+        .lang-btn { background: #222; color: #fff; padding: 6px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; border: 1px solid transparent; }
         .lang-btn.active { border-color: var(--accent); background: #333; }
 
         /* --- LAYOUT --- */
         .sidebar { width: 360px; background: var(--surface); border-right: 1px solid #222; display: flex; flex-direction: column; z-index: 10; transition: var(--transition); }
         .main-chat { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; transition: var(--transition); }
 
-        /* --- UI --- */
+        /* --- UI COMPONENTS --- */
         input { width: 100%; padding: 14px; margin: 10px 0; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; outline: none; }
-        button { width: 100%; padding: 14px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .btn-danger { background: var(--danger); color: white; margin-top: 10px; }
+        button { width: 100%; padding: 14px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; display: block; }
+        button:active { transform: scale(0.96); opacity: 0.8; }
+        .btn-danger { background: var(--danger); color: white; }
         .btn-secondary { background: #222; color: #fff; margin-top: 10px; }
 
         .profile-bar { padding: 15px 20px; background: var(--panel); margin: 20px; border-radius: 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; }
@@ -42,14 +44,13 @@
 
         .chat-header { padding: 15px 20px; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 15px; background: rgba(5,5,5,0.8); backdrop-filter: blur(10px); }
         .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { max-width: 75%; padding: 12px 16px; border-radius: 18px; font-size: 15px; animation: pop 0.2s ease; }
-        @keyframes pop { from { opacity: 0; transform: scale(0.95); } }
+        .bubble { max-width: 75%; padding: 12px 16px; border-radius: 18px; font-size: 15px; word-wrap: break-word; }
         .mine { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 2px; }
         .theirs { align-self: flex-start; background: var(--panel); border-bottom-left-radius: 2px; }
 
         .input-area { padding: 20px; display: flex; gap: 10px; background: var(--surface); }
 
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: none; align-items: center; justify-content: center; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; align-items: center; justify-content: center; }
         .modal-content { background: var(--surface); padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; }
 
         @media (max-width: 850px) {
@@ -58,7 +59,7 @@
             .main-chat.active { transform: translateX(0); }
             .back-btn { display: block !important; }
         }
-        .back-btn { display: none; background: none; color: white; font-size: 24px; width: auto; padding: 0 10px; }
+        .back-btn { display: none; background: none; color: white; font-size: 24px; width: auto; padding: 0 10px; border: none; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -68,12 +69,12 @@
         <div class="auth-card">
             <h1 style="font-size: 38px; letter-spacing: -2px; margin-bottom: 10px;">Dassger</h1>
             <div class="lang-switch">
-                <div class="lang-btn active" onclick="setLang('ru', this)">RU</div>
-                <div class="lang-btn" onclick="setLang('en', this)">EN</div>
+                <div class="lang-btn active" data-lang="ru">RU</div>
+                <div class="lang-btn" data-lang="en">EN</div>
             </div>
-            <p id="auth-desc" style="color: var(--text-dim); margin-bottom: 25px;"></p>
+            <p id="auth-desc" style="color: var(--text-dim); margin-bottom: 25px; font-size: 14px;"></p>
             <input type="text" id="reg-nickname" placeholder="">
-            <button id="btn-create" onclick="createAccount()"></button>
+            <button id="btn-create"></button>
         </div>
     </div>
 
@@ -81,23 +82,19 @@
         <div class="modal-content">
             <h2 id="set-title"></h2>
             <div class="avatar" id="set-avatar-preview" style="width:90px; height:90px; margin: 20px auto; font-size: 32px;">?</div>
-            <input type="file" id="file-avatar" hidden onchange="processAvatar(this)">
-            <button class="btn-secondary" id="btn-change-photo" onclick="document.getElementById('file-avatar').click()"></button>
+            <input type="file" id="file-avatar" hidden accept="image/*">
+            <button class="btn-secondary" id="btn-change-photo"></button>
             <input type="text" id="set-nickname-input">
-            <div class="lang-switch" style="margin-top:15px">
-                <div id="l-ru" class="lang-btn" onclick="setLang('ru', this)">RU</div>
-                <div id="l-en" class="lang-btn" onclick="setLang('en', this)">EN</div>
-            </div>
-            <p id="display-my-id" style="font-size: 11px; color: var(--text-dim); margin: 15px 0; background: #000; padding: 10px; border-radius: 8px; cursor: pointer;"></p>
-            <button id="btn-save" onclick="applySettings()"></button>
-            <button id="btn-nuke" class="btn-danger" onclick="nukeAccount()"></button>
-            <button class="btn-secondary" style="background:none" id="btn-cancel" onclick="closeModal('modal-settings')"></button>
+            <p id="display-my-id" style="font-size: 11px; color: var(--text-dim); margin: 15px 0; background: #000; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px dashed #333;"></p>
+            <button id="btn-save" style="margin-bottom: 10px;"></button>
+            <button id="btn-nuke" class="btn-danger"></button>
+            <button class="btn-secondary" style="background:none" id="btn-cancel"></button>
         </div>
     </div>
 
     <div class="app-container">
-        <aside class="sidebar">
-            <div class="profile-bar" onclick="openSettings()">
+        <aside class="sidebar" id="side-panel">
+            <div class="profile-bar" id="open-settings-btn">
                 <div class="avatar" id="my-avatar">?</div>
                 <div style="flex:1; overflow:hidden">
                     <b id="my-name-label">...</b>
@@ -105,27 +102,25 @@
                 </div>
             </div>
             <div style="padding: 0 20px 20px;">
-                <input type="text" id="conn-id" style="margin-bottom:5px">
-                <button id="btn-add-contact" onclick="connectFriend()"></button>
+                <input type="text" id="conn-id" placeholder="">
+                <button id="btn-add-contact"></button>
             </div>
             <div id="contact-list-ui" style="flex:1; overflow-y:auto"></div>
         </aside>
 
         <main class="main-chat" id="chat-window">
             <div class="chat-header">
-                <button class="back-btn" onclick="exitChat()">←</button>
-                <div class="avatar" id="chat-avatar" onclick="showPeerInfo()">?</div>
-                <div style="flex:1; cursor: pointer;" onclick="showPeerInfo()">
+                <button class="back-btn" id="chat-back-btn">←</button>
+                <div class="avatar" id="chat-avatar">?</div>
+                <div style="flex:1; cursor: pointer;" id="chat-info-clickable">
                     <b id="chat-user-name">...</b>
                     <div id="chat-user-id-label" style="font-size:10px; color:var(--text-dim)"></div>
                 </div>
             </div>
             <div class="messages" id="messages-ui"></div>
             <div class="input-area">
-                <input type="file" id="chat-file" hidden onchange="sendImage(this)">
-                <button onclick="document.getElementById('chat-file').click()" style="width:50px; background:#222; color:#fff">+</button>
-                <input type="text" id="msg-input" onkeypress="if(event.key==='Enter') doSend()">
-                <button id="btn-send" onclick="doSend()" style="width:85px"></button>
+                <input type="text" id="msg-input" placeholder="">
+                <button id="btn-send" style="width:85px"></button>
             </div>
         </main>
     </div>
@@ -133,60 +128,55 @@
     <script>
         const i18n = {
             ru: {
-                authDesc: "Ваш никнейм станет вашим постоянным ID",
-                regNick: "Введите ваш никнейм...",
+                authDesc: "Первый никнейм создаст ваш вечный ID",
+                regNick: "Придумайте ник...",
                 btnCreate: "Создать аккаунт",
                 setTitle: "Настройки",
                 btnPhoto: "Сменить фото",
-                setNick: "Изменить имя",
+                setNick: "Новое имя",
                 btnSave: "Сохранить",
-                btnNuke: "Удалить аккаунт",
-                btnCancel: "Отмена",
+                btnNuke: "Удалить всё",
+                btnCancel: "Закрыть",
                 myStatus: "Профиль и настройки",
-                addContact: "Найти контакт",
-                friendId: "ID друга...",
+                addContact: "Добавить ID",
+                friendId: "Введите ID друга...",
                 selectChat: "Выберите чат",
                 chatInfo: "Нажмите для инфо",
-                btnSend: "Отправить",
-                copyId: "Ваш ID (нажмите, чтобы скопировать)",
+                btnSend: "ОК",
+                copyId: "Ваш ID (нажми чтобы скопировать)",
                 confirmNuke: "ВНИМАНИЕ: Все данные будут удалены. Продолжить?",
-                copied: "ID скопирован!"
+                copied: "ID скопирован!",
+                msgInput: "Сообщение..."
             },
             en: {
-                authDesc: "Your nickname will be your permanent ID",
-                regNick: "Enter your nickname...",
+                authDesc: "First nickname will create your permanent ID",
+                regNick: "Choose nickname...",
                 btnCreate: "Create Account",
                 setTitle: "Settings",
                 btnPhoto: "Change Photo",
-                setNick: "Change Display Name",
-                btnSave: "Save Changes",
-                btnNuke: "Delete Account",
-                btnCancel: "Cancel",
+                setNick: "New display name",
+                btnSave: "Save",
+                btnNuke: "Wipe Data",
+                btnCancel: "Close",
                 myStatus: "Profile & Settings",
-                addContact: "Add Contact",
-                friendId: "Friend ID...",
-                selectChat: "Select a chat",
+                addContact: "Add ID",
+                friendId: "Paste Friend ID...",
+                selectChat: "Select chat",
                 chatInfo: "Click for info",
                 btnSend: "Send",
                 copyId: "Your ID (click to copy)",
-                confirmNuke: "WARNING: All data will be deleted. Continue?",
-                copied: "ID Copied!"
+                confirmNuke: "WARNING: Delete all data? This cannot be undone.",
+                copied: "ID Copied!",
+                msgInput: "Type here..."
             }
         };
 
         let currentLang = localStorage.getItem('dg_lang') || 'ru';
         let peer, conn, activePeerId = null;
-        let myProfile = JSON.parse(localStorage.getItem('dg_v8_profile')) || null;
-        let history = JSON.parse(localStorage.getItem('dg_v8_history')) || {};
+        let myProfile = JSON.parse(localStorage.getItem('dg_v9_profile')) || null;
+        let history = JSON.parse(localStorage.getItem('dg_v9_history')) || {};
 
-        function setLang(l, el) {
-            currentLang = l;
-            localStorage.setItem('dg_lang', l);
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
-            updateLocalization();
-        }
-
+        // --- CORE FUNCTIONS ---
         function updateLocalization() {
             const t = i18n[currentLang];
             document.getElementById('auth-desc').innerText = t.authDesc;
@@ -202,40 +192,34 @@
             document.getElementById('btn-add-contact').innerText = t.addContact;
             document.getElementById('conn-id').placeholder = t.friendId;
             document.getElementById('btn-send').innerText = t.btnSend;
-            document.getElementById('msg-input').placeholder = "...";
+            document.getElementById('msg-input').placeholder = t.msgInput;
             if(!activePeerId) {
                 document.getElementById('chat-user-name').innerText = t.selectChat;
                 document.getElementById('chat-user-id-label').innerText = t.chatInfo;
             }
-            document.getElementById('l-ru').classList.toggle('active', currentLang === 'ru');
-            document.getElementById('l-en').classList.toggle('active', currentLang === 'en');
-        }
-
-        if (myProfile) {
-            document.getElementById('auth-screen').classList.add('hidden');
-            startPeer(myProfile.id);
-        }
-
-        function createAccount() {
-            const nick = document.getElementById('reg-nickname').value.trim();
-            if (!nick) return;
-            const id = "dg_" + nick.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "_" + Math.floor(Math.random()*9999);
-            myProfile = { id, nickname: nick, avatar: null };
-            localStorage.setItem('dg_v8_profile', JSON.stringify(myProfile));
-            location.reload();
         }
 
         function startPeer(id) {
             peer = new Peer(id);
-            peer.on('open', () => { updateSidebarUI(); renderContacts(); });
-            peer.on('connection', (c) => { conn = c; setupConnection(); });
-            updateLocalization();
+            peer.on('open', () => { 
+                updateSidebarUI(); 
+                renderContacts(); 
+            });
+            peer.on('connection', (c) => {
+                conn = c;
+                setupConnection();
+            });
+            peer.on('error', (err) => {
+                if(err.type === 'peer-unavailable') alert("User is offline or ID is wrong.");
+            });
         }
 
         function setupConnection() {
             conn.on('open', () => {
                 activePeerId = conn.peer;
-                if (!history[activePeerId]) history[activePeerId] = { nickname: conn.metadata?.nick || activePeerId, avatar: conn.metadata?.av, msgs: [] };
+                if (!history[activePeerId]) {
+                    history[activePeerId] = { nickname: conn.metadata?.nick || activePeerId, avatar: conn.metadata?.av, msgs: [] };
+                }
                 openChatUI();
             });
             conn.on('data', (data) => {
@@ -250,13 +234,6 @@
             });
         }
 
-        function connectFriend() {
-            const fid = document.getElementById('conn-id').value.trim();
-            if (!fid || fid === myProfile.id) return;
-            conn = peer.connect(fid, { metadata: { nick: myProfile.nickname, av: myProfile.avatar } });
-            setupConnection();
-        }
-
         function openChatUI() {
             document.getElementById('chat-window').classList.add('active');
             const user = history[activePeerId];
@@ -266,28 +243,13 @@
             renderMessages();
         }
 
-        function doSend() {
-            const input = document.getElementById('msg-input');
-            if (!input.value.trim() || !conn) return;
-            conn.send({ content: input.value });
-            saveMessage(activePeerId, 'mine', input.value);
-            input.value = "";
-            renderMessages();
-        }
-
-        function saveMessage(pid, side, content) {
-            if (!history[pid]) history[pid] = { nickname: pid, msgs: [] };
-            history[pid].msgs.push({ side, content });
-            localStorage.setItem('dg_v8_history', JSON.stringify(history));
-        }
-
         function renderMessages() {
             const box = document.getElementById('messages-ui');
             box.innerHTML = "";
             (history[activePeerId]?.msgs || []).forEach(m => {
                 const div = document.createElement('div');
                 div.className = `bubble ${m.side}`;
-                div.innerHTML = m.content;
+                div.innerText = m.content;
                 box.appendChild(div);
             });
             box.scrollTop = box.scrollHeight;
@@ -299,47 +261,20 @@
             Object.keys(history).forEach(id => {
                 const div = document.createElement('div');
                 div.className = `contact-item ${activePeerId === id ? 'active' : ''}`;
-                div.onclick = () => { activePeerId = id; conn = peer.connect(id, { metadata: { nick: myProfile.nickname, av: myProfile.avatar } }); setupConnection(); };
+                div.onclick = () => { 
+                    activePeerId = id; 
+                    conn = peer.connect(id, { metadata: { nick: myProfile.nickname, av: myProfile.avatar } }); 
+                    setupConnection(); 
+                };
                 div.innerHTML = `<div class="avatar">${history[id].nickname[0].toUpperCase()}</div><b>${history[id].nickname}</b>`;
                 list.appendChild(div);
             });
         }
 
-        function openSettings() {
-            document.getElementById('modal-settings').style.display = 'flex';
-            document.getElementById('set-nickname-input').value = myProfile.nickname;
-            document.getElementById('display-my-id').innerText = i18n[currentLang].copyId + ": " + myProfile.id;
-            document.getElementById('display-my-id').onclick = () => { navigator.clipboard.writeText(myProfile.id); alert(i18n[currentLang].copied); }
-            updateAvatarIcon('set-avatar-preview', myProfile.avatar, myProfile.nickname);
-        }
-
-        function applySettings() {
-            myProfile.nickname = document.getElementById('set-nickname-input').value.trim() || myProfile.nickname;
-            localStorage.setItem('dg_v8_profile', JSON.stringify(myProfile));
-            updateSidebarUI();
-            closeModal('modal-settings');
-            if(conn) conn.send({type: 'meta', nick: myProfile.nickname, av: myProfile.avatar});
-        }
-
-        function nukeAccount() {
-            if(confirm(i18n[currentLang].confirmNuke)) { localStorage.clear(); location.reload(); }
-        }
-
-        function processAvatar(input) {
-            const reader = new FileReader();
-            reader.onload = (e) => { myProfile.avatar = e.target.result; updateAvatarIcon('set-avatar-preview', myProfile.avatar, myProfile.nickname); };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function sendImage(input) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const img = `<img src="${reader.result}" style="width:100%; border-radius:10px">`;
-                conn.send({ content: img });
-                saveMessage(activePeerId, 'mine', img);
-                renderMessages();
-            };
-            reader.readAsDataURL(input.files[0]);
+        function saveMessage(pid, side, content) {
+            if (!history[pid]) history[pid] = { nickname: pid, msgs: [] };
+            history[pid].msgs.push({ side, content });
+            localStorage.setItem('dg_v9_history', JSON.stringify(history));
         }
 
         function updateSidebarUI() {
@@ -353,11 +288,97 @@
             else el.innerText = nick ? nick[0].toUpperCase() : '?';
         }
 
-        function exitChat() { document.getElementById('chat-window').classList.remove('active'); activePeerId = null; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function showPeerInfo() { if(activePeerId) alert("ID: " + activePeerId); }
-        
-        updateLocalization();
+        // --- BUTTON HANDLERS (Manual Listeners for Stability) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLocalization();
+
+            // Language Switch
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.onclick = () => {
+                    currentLang = btn.getAttribute('data-lang');
+                    localStorage.setItem('dg_lang', currentLang);
+                    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    updateLocalization();
+                };
+            });
+
+            // Create Account
+            document.getElementById('btn-create').onclick = () => {
+                const nick = document.getElementById('reg-nickname').value.trim();
+                if (!nick) return;
+                const id = "dg_" + nick.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "_" + Math.floor(Math.random()*999);
+                myProfile = { id, nickname: nick, avatar: null };
+                localStorage.setItem('dg_v9_profile', JSON.stringify(myProfile));
+                location.reload();
+            };
+
+            // Add Contact
+            document.getElementById('btn-add-contact').onclick = () => {
+                const fid = document.getElementById('conn-id').value.trim();
+                if (!fid || fid === myProfile.id) return;
+                conn = peer.connect(fid, { metadata: { nick: myProfile.nickname, av: myProfile.avatar } });
+                setupConnection();
+            };
+
+            // Send Message
+            document.getElementById('btn-send').onclick = () => {
+                const input = document.getElementById('msg-input');
+                if (!input.value.trim() || !conn) return;
+                conn.send({ content: input.value });
+                saveMessage(activePeerId, 'mine', input.value);
+                input.value = "";
+                renderMessages();
+            };
+
+            // Settings Modal
+            document.getElementById('open-settings-btn').onclick = () => {
+                document.getElementById('modal-settings').style.display = 'flex';
+                document.getElementById('set-nickname-input').value = myProfile.nickname;
+                document.getElementById('display-my-id').innerText = i18n[currentLang].copyId + ": " + myProfile.id;
+                updateAvatarIcon('set-avatar-preview', myProfile.avatar, myProfile.nickname);
+            };
+
+            document.getElementById('display-my-id').onclick = () => {
+                navigator.clipboard.writeText(myProfile.id);
+                alert(i18n[currentLang].copied);
+            };
+
+            document.getElementById('btn-save').onclick = () => {
+                myProfile.nickname = document.getElementById('set-nickname-input').value.trim() || myProfile.nickname;
+                localStorage.setItem('dg_v9_profile', JSON.stringify(myProfile));
+                updateSidebarUI();
+                document.getElementById('modal-settings').style.display = 'none';
+                if(conn) conn.send({type: 'meta', nick: myProfile.nickname, av: myProfile.avatar});
+            };
+
+            document.getElementById('btn-nuke').onclick = () => {
+                if(confirm(i18n[currentLang].confirmNuke)) { localStorage.clear(); location.reload(); }
+            };
+
+            document.getElementById('btn-cancel').onclick = () => {
+                document.getElementById('modal-settings').style.display = 'none';
+            };
+
+            document.getElementById('chat-back-btn').onclick = () => {
+                document.getElementById('chat-window').classList.remove('active');
+                activePeerId = null;
+            };
+
+            // Avatar Process
+            document.getElementById('btn-change-photo').onclick = () => document.getElementById('file-avatar').click();
+            document.getElementById('file-avatar').onchange = (e) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    myProfile.avatar = ev.target.result;
+                    updateAvatarIcon('set-avatar-preview', myProfile.avatar, myProfile.nickname);
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            };
+        });
+
+        // Start if profile exists
+        if(myProfile) startPeer(myProfile.id);
     </script>
 </body>
 </html>
