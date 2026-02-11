@@ -1,338 +1,314 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dassger Ultra | Final v12.5</title>
+    <title>Dassger Ultra Minimal</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #030303;
-            --card: rgba(25, 25, 25, 0.8);
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --border: #1a1a1a;
             --accent: #ffffff;
             --text: #ffffff;
-            --text-dim: #888;
-            --glass: blur(25px) saturate(180%);
-            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --text-dim: #666666;
+            --danger: #ff4444;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            background: var(--bg); 
-            background-image: radial-gradient(circle at 50% -20%, #333 0%, #030303 95%); 
-            color: var(--text); 
-            height: 100vh; 
-            overflow: hidden; 
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; outline: none; }
+        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* --- SCREEN CONTROL --- */
-        .screen { position: fixed; inset: 0; display: none; opacity: 0; transition: opacity 0.5s ease; }
+        /* Управление экранами */
+        .screen { position: fixed; inset: 0; display: none; flex-direction: column; opacity: 0; transition: opacity 0.3s; }
         .screen.active { display: flex; opacity: 1; }
 
-        /* --- AUTH SCREEN --- */
-        #screen-auth { align-items: center; justify-content: center; z-index: 1000; }
-        .auth-card { 
-            width: 90%; max-width: 400px; padding: 50px; border-radius: 45px; 
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: var(--glass); text-align: center;
-        }
+        /* Экран входа */
+        #auth-screen { align-items: center; justify-content: center; background: var(--bg); z-index: 1000; }
+        .auth-box { width: 100%; max-width: 320px; text-align: center; }
 
-        /* --- APP SCREEN --- */
-        #screen-app { width: 100%; height: 100vh; padding: 20px; gap: 20px; }
+        /* Основной интерфейс */
+        .container { display: flex; height: 100vh; width: 100%; }
+        .sidebar { width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg); }
+        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
 
-        /* --- UI ELEMENTS --- */
-        input { 
-            width: 100%; padding: 20px; margin: 15px 0; background: rgba(0,0,0,0.5); 
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 25px; color: #fff; 
-            outline: none; transition: var(--transition); font-size: 16px;
-        }
-        input:focus { border-color: var(--accent); background: rgba(0,0,0,0.8); }
+        /* Элементы UI */
+        input { width: 100%; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; transition: 0.2s; }
+        input:focus { border-color: var(--text-dim); }
+        
+        button { width: 100%; padding: 14px; background: var(--accent); color: #000; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
 
-        button { 
-            width: 100%; padding: 20px; background: var(--accent); color: #000; 
-            border: none; border-radius: 25px; font-weight: 800; cursor: pointer;
-            box-shadow: 0 10px 30px rgba(255,255,255,0.1); transition: var(--transition);
-        }
-        button:active { transform: scale(0.95); }
-
-        .avatar { 
-            width: 60px; height: 60px; border-radius: 22px; background: linear-gradient(135deg, #444, #111);
-            display: flex; align-items: center; justify-content: center; font-weight: 800;
-            border: 1px solid rgba(255,255,255,0.1); overflow: hidden; position: relative;
-        }
+        .avatar { width: 44px; height: 44px; border-radius: 50%; background: #111; display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden; border: 1px solid var(--border); flex-shrink: 0; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* --- CHAT AREA --- */
-        .sidebar { width: 380px; display: flex; flex-direction: column; border-radius: 40px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: var(--glass); }
-        .main-chat { flex: 1; display: flex; flex-direction: column; border-radius: 40px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: var(--glass); overflow: hidden; }
+        /* Список контактов */
+        .list-item { padding: 15px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #080808; transition: 0.2s; }
+        .list-item:hover { background: #080808; }
+        .list-item.active { background: var(--surface); }
 
-        .messages { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .bubble { 
-            max-width: 75%; padding: 16px 22px; border-radius: 26px; font-size: 15px; 
-            animation: pop 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.28) both; 
-        }
-        @keyframes pop { from { opacity: 0; transform: scale(0.8) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        /* Чат */
+        .messages { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
+        .msg.mine { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 2px; }
+        .msg.theirs { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+
+        /* Модальное окно */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: var(--surface); padding: 40px; border-radius: 20px; width: 90%; max-width: 360px; border: 1px solid var(--border); text-align: center; }
+
+        .lang-toggle { position: absolute; top: 25px; right: 25px; font-size: 11px; cursor: pointer; color: var(--text-dim); letter-spacing: 1px; z-index: 3000; }
         
-        .mine { align-self: flex-end; background: #fff; color: #000; border-bottom-right-radius: 4px; }
-        .theirs { align-self: flex-start; background: rgba(255,255,255,0.1); border-bottom-left-radius: 4px; }
-
-        .contact-item { padding: 20px; margin: 5px 15px; border-radius: 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; transition: 0.3s; }
-        .contact-item:hover { background: rgba(255,255,255,0.05); }
-        .contact-item.active { background: rgba(255,255,255,0.1); }
-
-        /* --- MODAL --- */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(30px); }
-        .modal-card { width: 90%; max-width: 420px; padding: 40px; border-radius: 50px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-
-        @media (max-width: 800px) {
-            #screen-app { padding: 0; gap: 0; }
-            .sidebar { width: 100%; border-radius: 0; border: none; }
-            .main-chat { position: fixed; inset: 0; z-index: 100; border-radius: 0; transform: translateX(100%); transition: 0.5s; display: none; }
-            .main-chat.active { transform: translateX(0); display: flex; }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; }
+            .main { display: none; position: fixed; inset: 0; z-index: 100; }
+            .main.active { display: flex; }
+            .back-btn { display: block !important; }
         }
     </style>
 </head>
 <body>
 
-    <section id="screen-auth" class="screen">
-        <div class="auth-card">
-            <h1 style="font-size: 50px; font-weight: 800; letter-spacing: -3px; margin-bottom: 10px;">Dassger</h1>
-            <p style="color: var(--text-dim); margin-bottom: 30px;">Создайте свой защищенный ID</p>
-            <input type="text" id="input-reg-nick" placeholder="Введите ваш никнейм...">
-            <button id="btn-login-action">Создать аккаунт</button>
-        </div>
-    </section>
+    <div class="lang-toggle" onclick="toggleLang()">EN / RU</div>
 
-    <section id="screen-app" class="screen">
-        <aside class="sidebar">
-            <div style="padding: 35px;">
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px; cursor: pointer;" id="btn-open-settings">
-                    <div class="avatar" id="my-avatar-view"></div>
-                    <div>
-                        <b id="my-name-view" style="font-size: 20px; display: block;"></b>
-                        <span style="font-size: 11px; color: var(--text-dim);">Настройки профиля</span>
+    <div id="auth-screen" class="screen">
+        <div class="auth-box">
+            <h1 style="margin-bottom: 30px; font-weight: 300; letter-spacing: 5px;">DASSGER</h1>
+            <input type="text" id="reg-nick" placeholder="Nickname">
+            <button onclick="createAccount()" id="btn-create">Start</button>
+        </div>
+    </div>
+
+    <div id="app-screen" class="screen">
+        <div class="container">
+            <aside class="sidebar">
+                <div style="padding: 25px; border-bottom: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px; cursor: pointer;" onclick="openSettings()">
+                        <div class="avatar" id="my-av"></div>
+                        <span id="my-name" style="font-weight: 600; font-size: 14px;"></span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="target-id" placeholder="Friend ID" style="margin:0;">
+                        <button onclick="connectToPeer()" style="width: 50px;">+</button>
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="input-target-id" placeholder="ID друга..." style="margin: 0; padding: 15px;">
-                    <button id="btn-add-friend" style="width: 60px; padding: 0;">+</button>
+                <div id="contact-list" style="overflow-y: auto; flex: 1;"></div>
+            </aside>
+
+            <main class="main" id="main-ui">
+                <div style="padding: 18px 25px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; background: var(--bg);">
+                    <span onclick="closeChat()" style="cursor:pointer; display:none; font-size: 20px;" id="mobile-back" class="back-btn">←</span>
+                    <div class="avatar" id="chat-av" style="width:32px; height:32px;"></div>
+                    <span id="chat-name" style="font-size: 14px; font-weight: 600;">Select chat</span>
                 </div>
-            </div>
-            <div id="contacts-list" style="flex:1; overflow-y:auto;"></div>
-        </aside>
+                <div class="messages" id="msg-box"></div>
+                <div style="padding: 25px; display: flex; gap: 10px; background: var(--bg);">
+                    <input type="text" id="msg-input" placeholder="Type..." style="margin:0;">
+                    <button onclick="sendMsg()" style="width: 80px;" id="btn-send">Send</button>
+                </div>
+            </main>
+        </div>
+    </div>
 
-        <main class="main-chat" id="chat-panel">
-            <div style="padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 15px;">
-                <button id="btn-back" style="width: 40px; background: none; color: white; font-size: 24px; padding: 0; display: none;">←</button>
-                <div class="avatar" id="chat-avatar-view" style="width: 45px; height: 45px;"></div>
-                <b id="chat-name-view">Выберите чат</b>
-            </div>
-            <div class="messages" id="messages-box"></div>
-            <div style="padding: 25px; background: rgba(0,0,0,0.2); display: flex; gap: 15px;">
-                <input type="text" id="input-msg" placeholder="Сообщение..." style="margin: 0;">
-                <button id="btn-send" style="width: 80px;">ОК</button>
-            </div>
-        </main>
-    </section>
-
-    <div id="modal-settings" class="modal">
-        <div class="modal-card">
-            <h2 style="margin-bottom: 25px;">Настройки</h2>
-            <div class="avatar" id="set-av-preview" style="width: 120px; height: 120px; margin: 0 auto 20px; border-radius: 40px; font-size: 40px; cursor: pointer;">
-                <input type="file" id="file-input" hidden accept="image/*">
-            </div>
-            <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 20px;">Нажми на фото, чтобы изменить</p>
-            <input type="text" id="set-name-input">
-            <div id="my-full-id" style="font-size: 10px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 20px; margin: 15px 0; border: 1px dashed #444; cursor: pointer;"></div>
-            <button id="btn-save-settings" style="margin-bottom: 10px;">Сохранить</button>
-            <button id="btn-logout" style="background: #ff3b3b; color: white;">Выйти из аккаунта</button>
-            <button id="btn-close-modal" style="background: none; color: #777; margin-top: 10px;">Закрыть</button>
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="set-title" style="margin-bottom: 25px; font-weight: 400;">Settings</h3>
+            <div class="avatar" id="set-av-preview" style="width: 100px; height: 100px; margin: 0 auto 15px; font-size: 30px; cursor: pointer;" onclick="document.getElementById('file-in').click()"></div>
+            <p style="font-size: 11px; color: var(--text-dim); margin-bottom: 20px;" id="photo-hint">Tap to change photo</p>
+            <input type="file" id="file-in" hidden onchange="handleFile(this)" accept="image/*">
+            <input type="text" id="set-name-in">
+            <div id="my-id-display" onclick="copyId()" style="font-size: 10px; color: var(--text-dim); margin: 15px 0; padding: 12px; background: #000; border-radius: 8px; cursor: pointer; word-break: break-all;"></div>
+            <button onclick="saveSettings()" id="btn-save">Save</button>
+            <button onclick="deleteAccount()" style="background: none; color: var(--danger); margin-top: 20px; font-size: 12px;" id="btn-delete">Wipe Account Data</button>
+            <button onclick="closeSettings()" style="background: none; color: var(--text-dim); margin-top: 10px; font-size: 12px;" id="btn-close">Cancel</button>
         </div>
     </div>
 
     <script>
-        // --- ДАННЫЕ ---
-        let profile = JSON.parse(localStorage.getItem('dg_v12_profile'));
-        let history = JSON.parse(localStorage.getItem('dg_v12_history')) || {};
-        let peer, conn, activeId = null;
-
-        // --- ИНИЦИАЛИЗАЦИЯ ---
-        window.onload = () => {
-            if (profile) {
-                showScreen('screen-app');
-                initPeer();
-            } else {
-                showScreen('screen-auth');
+        const i18n = {
+            en: {
+                create: "Start", nick: "Nickname", photoHint: "Tap to change photo", save: "Save",
+                delete: "Wipe Account Data", close: "Cancel", select: "Select chat", send: "Send",
+                copied: "ID Copied!", confirm: "Permanent action: Delete all data and messages?",
+                settings: "Settings", idLabel: "Your ID (click to copy):", type: "Type..."
+            },
+            ru: {
+                create: "Войти", nick: "Никнейм", photoHint: "Нажми для смены фото", save: "Сохранить",
+                delete: "Удалить все данные", close: "Отмена", select: "Выберите чат", send: "ОК",
+                copied: "ID скопирован!", confirm: "Внимание: Это удалит аккаунт и все переписки навсегда.",
+                settings: "Настройки", idLabel: "Ваш ID (нажми для копии):", type: "Сообщение..."
             }
         };
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        let lang = localStorage.getItem('dg_lang') || 'en';
+        let profile = JSON.parse(localStorage.getItem('dg_profile'));
+        let history = JSON.parse(localStorage.getItem('dg_history')) || {};
+        let peer, conn, activeId = null;
+
+        function updateLang() {
+            const t = i18n[lang];
+            document.getElementById('btn-create').innerText = t.create;
+            document.getElementById('reg-nick').placeholder = t.nick;
+            document.getElementById('photo-hint').innerText = t.photoHint;
+            document.getElementById('btn-save').innerText = t.save;
+            document.getElementById('btn-delete').innerText = t.delete;
+            document.getElementById('btn-close').innerText = t.close;
+            document.getElementById('btn-send').innerText = t.send;
+            document.getElementById('set-title').innerText = t.settings;
+            document.getElementById('msg-input').placeholder = t.type;
+            if(!activeId) document.getElementById('chat-name').innerText = t.select;
         }
 
-        // --- ПЕРСОНАЖ / ВХОД ---
-        document.getElementById('btn-login-action').onclick = () => {
-            const nick = document.getElementById('input-reg-nick').value.trim();
-            if (nick.length < 2) return alert("Слишком короткий ник");
-            
-            const id = "dg_" + Math.random().toString(36).substr(2, 6) + "_" + nick.toLowerCase().replace(/[^a-z]/g, "");
-            profile = { id, name: nick, av: null };
-            localStorage.setItem('dg_v12_profile', JSON.stringify(profile));
-            window.location.reload();
-        };
+        function toggleLang() {
+            lang = lang === 'en' ? 'ru' : 'en';
+            localStorage.setItem('dg_lang', lang);
+            updateLang();
+        }
 
-        // --- PEERJS LOGIC ---
+        window.onload = () => {
+            updateLang();
+            if(profile) {
+                document.getElementById('app-screen').classList.add('active');
+                initPeer();
+            } else {
+                document.getElementById('auth-screen').classList.add('active');
+            }
+        }
+
+        function createAccount() {
+            const nick = document.getElementById('reg-nick').value.trim();
+            if(!nick) return;
+            const id = 'dg-' + Math.random().toString(36).substr(2, 6);
+            profile = { id, name: nick, av: null };
+            localStorage.setItem('dg_profile', JSON.stringify(profile));
+            window.location.reload();
+        }
+
         function initPeer() {
             peer = new Peer(profile.id);
-            
-            peer.on('open', (id) => {
-                updateUI();
-                renderContacts();
+            peer.on('open', () => { updateUI(); renderContacts(); });
+            peer.on('connection', c => { 
+                conn = c; 
+                setupConn(); 
             });
-
-            peer.on('connection', (c) => {
-                conn = c;
-                setupConn();
-            });
+            peer.on('error', () => alert('Connection error or peer offline'));
         }
 
         function setupConn() {
             conn.on('open', () => {
                 activeId = conn.peer;
-                if (!history[activeId]) history[activeId] = { name: conn.metadata?.name || activeId, av: conn.metadata?.av, msgs: [] };
+                if(!history[activeId]) history[activeId] = { name: conn.metadata?.name || activeId, av: conn.metadata?.av, msgs: [] };
                 openChat(activeId);
             });
-
-            conn.on('data', (data) => {
-                if (data.type === 'msg') {
+            conn.on('data', data => {
+                if(data.type === 'msg') {
+                    if(!history[conn.peer]) history[conn.peer] = { name: conn.metadata?.name || conn.peer, msgs: [] };
                     pushMsg(conn.peer, 'theirs', data.text);
-                } else if (data.type === 'meta') {
-                    history[conn.peer].name = data.name;
-                    history[conn.peer].av = data.av;
                 }
                 renderContacts();
-                if (activeId === conn.peer) renderMsgs();
+                if(activeId === conn.peer) renderMsgs();
             });
         }
 
-        // --- ЧАТЫ ---
         function openChat(id) {
             activeId = id;
-            const chat = history[id];
-            document.getElementById('chat-panel').classList.add('active');
-            document.getElementById('chat-name-view').innerText = chat.name;
-            drawAv('chat-avatar-view', chat.av, chat.name);
+            document.getElementById('main-ui').classList.add('active');
+            document.getElementById('chat-name').innerText = history[id].name;
+            const chatAv = document.getElementById('chat-avatar-view') || document.getElementById('chat-av');
+            chatAv.innerHTML = history[id].av ? `<img src="${history[id].av}">` : history[id].name[0].toUpperCase();
             renderMsgs();
-            if (window.innerWidth < 800) document.getElementById('btn-back').style.display = 'block';
+        }
+
+        function sendMsg() {
+            const input = document.getElementById('msg-input');
+            if(!input.value || !conn) return;
+            conn.send({ type: 'msg', text: input.value });
+            pushMsg(activeId, 'mine', input.value);
+            input.value = '';
+            renderMsgs();
         }
 
         function pushMsg(id, side, text) {
-            if (!history[id]) history[id] = { name: id, msgs: [] };
+            if(!history[id].msgs) history[id].msgs = [];
             history[id].msgs.push({ side, text });
-            localStorage.setItem('dg_v12_history', JSON.stringify(history));
+            localStorage.setItem('dg_history', JSON.stringify(history));
         }
 
         function renderMsgs() {
-            const box = document.getElementById('messages-box');
-            box.innerHTML = '';
-            history[activeId].msgs.forEach(m => {
-                const d = document.createElement('div');
-                d.className = `bubble ${m.side}`;
-                d.innerText = m.text;
-                box.appendChild(d);
-            });
+            const box = document.getElementById('msg-box');
+            box.innerHTML = history[activeId].msgs.map(m => `<div class="msg ${m.side}">${m.text}</div>`).join('');
             box.scrollTop = box.scrollHeight;
         }
 
         function renderContacts() {
-            const list = document.getElementById('contacts-list');
-            list.innerHTML = '';
-            Object.keys(history).forEach(id => {
-                const item = history[id];
-                const d = document.createElement('div');
-                d.className = `contact-item ${activeId === id ? 'active' : ''}`;
-                d.onclick = () => {
-                    activeId = id;
-                    conn = peer.connect(id, { metadata: { name: profile.name, av: profile.av } });
-                    setupConn();
-                };
-                d.innerHTML = `<div class="avatar">${item.av ? `<img src="${item.av}">` : item.name[0].toUpperCase()}</div><b>${item.name}</b>`;
-                list.appendChild(d);
-            });
+            const list = document.getElementById('contact-list');
+            list.innerHTML = Object.keys(history).map(id => `
+                <div class="list-item ${activeId === id ? 'active' : ''}" onclick="startConnect('${id}')">
+                    <div class="avatar">${history[id].av ? `<img src="${history[id].av}">` : history[id].name[0].toUpperCase()}</div>
+                    <span style="font-size: 14px;">${history[id].name}</span>
+                </div>
+            `).join('');
         }
 
-        // --- ИНТЕРФЕЙС ---
-        function updateUI() {
-            document.getElementById('my-name-view').innerText = profile.name;
-            drawAv('my-avatar-view', profile.av, profile.name);
-        }
-
-        function drawAv(elId, src, nick) {
-            const el = document.getElementById(elId);
-            if (src) el.innerHTML = `<img src="${src}">`;
-            else el.innerText = nick ? nick[0].toUpperCase() : '?';
-        }
-
-        document.getElementById('btn-send').onclick = () => {
-            const inp = document.getElementById('input-msg');
-            if (!inp.value.trim() || !activeId) return;
-            const text = inp.value;
-            if (conn) conn.send({ type: 'msg', text });
-            pushMsg(activeId, 'mine', text);
-            inp.value = '';
-            renderMsgs();
-        };
-
-        document.getElementById('btn-add-friend').onclick = () => {
-            const id = document.getElementById('input-target-id').value.trim();
-            if (!id || id === profile.id) return;
+        function startConnect(id) {
             conn = peer.connect(id, { metadata: { name: profile.name, av: profile.av } });
             setupConn();
-        };
+        }
 
-        // --- НАСТРОЙКИ ---
-        document.getElementById('btn-open-settings').onclick = () => {
-            document.getElementById('modal-settings').style.display = 'flex';
-            document.getElementById('set-name-input').value = profile.name;
-            document.getElementById('my-full-id').innerText = "Ваш ID (нажми чтобы скопировать):\n" + profile.id;
-            drawAv('set-av-preview', profile.av, profile.name);
-        };
+        function connectToPeer() {
+            const id = document.getElementById('target-id').value.trim();
+            if(id && id !== profile.id) startConnect(id);
+        }
 
-        document.getElementById('set-av-preview').onclick = () => document.getElementById('file-input').click();
+        function updateUI() {
+            document.getElementById('my-name').innerText = profile.name;
+            document.getElementById('my-av').innerHTML = profile.av ? `<img src="${profile.av}">` : profile.name[0].toUpperCase();
+        }
 
-        document.getElementById('file-input').onchange = (e) => {
-            const file = e.target.files[0];
+        function openSettings() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            document.getElementById('set-name-in').value = profile.name;
+            document.getElementById('my-id-display').innerText = profile.id;
+            document.getElementById('set-av-preview').innerHTML = profile.av ? `<img src="${profile.av}">` : profile.name[0].toUpperCase();
+        }
+
+        function saveSettings() {
+            profile.name = document.getElementById('set-name-in').value;
+            localStorage.setItem('dg_profile', JSON.stringify(profile));
+            updateUI();
+            closeSettings();
+        }
+
+        function handleFile(input) {
+            const file = input.files[0];
+            if(!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => {
-                profile.av = ev.target.result;
-                drawAv('set-av-preview', profile.av, profile.name);
+            reader.onload = e => {
+                profile.av = e.target.result;
+                document.getElementById('set-av-preview').innerHTML = `<img src="${profile.av}">`;
             };
             reader.readAsDataURL(file);
-        };
+        }
 
-        document.getElementById('btn-save-settings').onclick = () => {
-            profile.name = document.getElementById('set-name-input').value;
-            localStorage.setItem('dg_v12_profile', JSON.stringify(profile));
-            updateUI();
-            document.getElementById('modal-settings').style.display = 'none';
-        };
-
-        document.getElementById('btn-logout').onclick = () => {
-            if (confirm("Удалить аккаунт?")) {
+        function deleteAccount() {
+            if(confirm(i18n[lang].confirm)) {
                 localStorage.clear();
                 window.location.reload();
             }
-        };
+        }
 
-        document.getElementById('btn-close-modal').onclick = () => document.getElementById('modal-settings').style.display = 'none';
-        document.getElementById('btn-back').onclick = () => document.getElementById('chat-panel').classList.remove('active');
-        document.getElementById('my-full-id').onclick = () => {
-            navigator.clipboard.writeText(profile.id);
-            alert("Скопировано!");
-        };
+        function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+        function closeChat() { document.getElementById('main-ui').classList.remove('active'); activeId = null; }
+        function copyId() { 
+            navigator.clipboard.writeText(profile.id); 
+            alert(i18n[lang].copied); 
+        }
+
+        // Поддержка Enter
+        document.getElementById('msg-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') sendMsg();
+        });
     </script>
 </body>
 </html>
