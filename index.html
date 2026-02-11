@@ -3,316 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dassger</title>
+    <title>Dassger | P2P Multilingual</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #050505;
-            --surface: #111111;
-            --panel: #181818;
-            --accent: #ffffff;
-            --text-main: #ffffff;
-            --text-dim: #707070;
-            --radius-lg: 24px;
-            --radius-sm: 12px;
-            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --bg: #050505; --surface: #111111; --panel: #1a1a1a; --accent: #ffffff;
+            --text: #ffffff; --text-dim: #888888; --danger: #ff4444;
+            --radius: 16px; --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
 
-        /* --- UI Screens --- */
-        .auth-overlay {
-            position: fixed; inset: 0; background: var(--bg);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 10000; transition: var(--transition);
-        }
-        .auth-card {
-            background: var(--surface); padding: 40px; border-radius: var(--radius-lg);
-            width: 90%; max-width: 400px; text-align: center; border: 1px solid rgba(255,255,255,0.05);
-        }
+        /* --- AUTH --- */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: var(--surface); padding: 40px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #222; }
+        .lang-switch { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .lang-btn { background: #222; color: #fff; padding: 5px 15px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+        .lang-btn.active { border-color: var(--accent); background: #333; }
 
-        input { width: 100%; padding: 16px; margin: 12px 0; background: #000; border: 1px solid #222; border-radius: var(--radius-sm); color: #fff; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--accent); }
-        button { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; }
+        /* --- LAYOUT --- */
+        .sidebar { width: 360px; background: var(--surface); border-right: 1px solid #222; display: flex; flex-direction: column; z-index: 10; transition: var(--transition); }
+        .main-chat { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; transition: var(--transition); }
 
-        /* --- Adaptive Layout Logic --- */
-        .app-container { display: flex; width: 100%; height: 100vh; position: relative; }
+        /* --- UI --- */
+        input { width: 100%; padding: 14px; margin: 10px 0; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; outline: none; }
+        button { width: 100%; padding: 14px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-danger { background: var(--danger); color: white; margin-top: 10px; }
+        .btn-secondary { background: #222; color: #fff; margin-top: 10px; }
 
-        .sidebar { 
-            width: 380px; 
-            background: var(--surface); 
-            border-right: 1px solid rgba(255,255,255,0.05); 
-            display: flex; 
-            flex-direction: column; 
-            z-index: 10;
-            transition: var(--transition);
-        }
-
-        .chat-main { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            background: var(--bg); 
-            transition: var(--transition);
-            position: relative;
-        }
-
-        /* Mobile specific styles (Triggered via JS and Media Queries) */
-        @media (max-width: 850px) {
-            .sidebar {
-                width: 100%;
-                position: absolute;
-                inset: 0;
-            }
-            .chat-main {
-                position: absolute;
-                inset: 0;
-                transform: translateX(100%);
-                z-index: 20;
-            }
-            .chat-main.active {
-                transform: translateX(0);
-            }
-        }
-
-        /* --- Components --- */
-        .side-header { padding: 30px 24px; }
-        .profile-mini { display: flex; align-items: center; gap: 15px; padding: 15px; background: var(--panel); border-radius: var(--radius-sm); margin-bottom: 20px; cursor: pointer; }
-        .avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; overflow: hidden; }
+        .profile-bar { padding: 15px 20px; background: var(--panel); margin: 20px; border-radius: 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; font-weight: 800; overflow: hidden; flex-shrink: 0; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-        .contact-list { flex: 1; overflow-y: auto; padding: 0 12px; }
-        .contact-item { display: flex; align-items: center; gap: 15px; padding: 16px; border-radius: var(--radius-sm); cursor: pointer; margin-bottom: 8px; transition: 0.2s; }
-        .contact-item:hover { background: var(--panel); }
-        .contact-item.active { background: var(--panel); border-right: 4px solid var(--accent); }
+        .contact-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #111; }
+        .contact-item.active { background: #1a1a1a; border-right: 4px solid white; }
 
-        .chat-header { padding: 15px 25px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 15px; background: rgba(5,5,5,0.8); backdrop-filter: blur(10px); }
-        
-        .back-btn { display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: auto; padding: 0 10px; }
-        @media (max-width: 850px) { .back-btn { display: block; } }
-
-        .msg-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.4; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } }
+        .chat-header { padding: 15px 20px; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 15px; background: rgba(5,5,5,0.8); backdrop-filter: blur(10px); }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 75%; padding: 12px 16px; border-radius: 18px; font-size: 15px; animation: pop 0.2s ease; }
+        @keyframes pop { from { opacity: 0; transform: scale(0.95); } }
         .mine { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 2px; }
         .theirs { align-self: flex-start; background: var(--panel); border-bottom-left-radius: 2px; }
 
-        .input-bar { padding: 20px; background: var(--surface); display: flex; gap: 10px; align-items: center; }
-        .hidden { display: none !important; }
+        .input-area { padding: 20px; display: flex; gap: 10px; background: var(--surface); }
 
-        #settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 20000; display: none; align-items: center; justify-content: center; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: var(--surface); padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; }
+
+        @media (max-width: 850px) {
+            .sidebar { width: 100%; position: absolute; inset: 0; }
+            .main-chat { position: absolute; inset: 0; transform: translateX(100%); z-index: 100; }
+            .main-chat.active { transform: translateX(0); }
+            .back-btn { display: block !important; }
+        }
+        .back-btn { display: none; background: none; color: white; font-size: 24px; width: auto; padding: 0 10px; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen" class="auth-overlay">
+    <div id="auth-screen">
         <div class="auth-card">
-            <h1 style="font-size: 36px; letter-spacing: -2px;">Dassger</h1>
-            <p style="color: var(--text-dim); margin: 10px 0 25px;">The ID will be your first nickname</p>
-            <input type="text" id="user-nickname" placeholder="Username (e.g. Neo)">
-            <button onclick="startApp()">Create Account</button>
+            <h1 style="font-size: 38px; letter-spacing: -2px; margin-bottom: 10px;">Dassger</h1>
+            <div class="lang-switch">
+                <div class="lang-btn active" onclick="setLang('ru', this)">RU</div>
+                <div class="lang-btn" onclick="setLang('en', this)">EN</div>
+            </div>
+            <p id="auth-desc" style="color: var(--text-dim); margin-bottom: 25px;"></p>
+            <input type="text" id="reg-nickname" placeholder="">
+            <button id="btn-create" onclick="createAccount()"></button>
         </div>
     </div>
 
-    <div id="settings-modal">
-        <div class="auth-card">
-            <h2>Settings</h2>
-            <div style="margin: 20px 0;">
-                <div class="avatar" id="settings-avatar" style="width:80px; height:80px; margin: 0 auto; font-size: 30px;"></div>
-                <button onclick="document.getElementById('avatar-input').click()" style="background:none; color:var(--text-dim); font-size:12px; margin-top:10px">Change Photo</button>
-                <input type="file" id="avatar-input" hidden onchange="updateAvatar(this)">
+    <div id="modal-settings" class="modal">
+        <div class="modal-content">
+            <h2 id="set-title"></h2>
+            <div class="avatar" id="set-avatar-preview" style="width:90px; height:90px; margin: 20px auto; font-size: 32px;">?</div>
+            <input type="file" id="file-avatar" hidden onchange="processAvatar(this)">
+            <button class="btn-secondary" id="btn-change-photo" onclick="document.getElementById('file-avatar').click()"></button>
+            <input type="text" id="set-nickname-input">
+            <div class="lang-switch" style="margin-top:15px">
+                <div id="l-ru" class="lang-btn" onclick="setLang('ru', this)">RU</div>
+                <div id="l-en" class="lang-btn" onclick="setLang('en', this)">EN</div>
             </div>
-            <input type="text" id="edit-nickname" placeholder="Display Name">
-            <button onclick="saveSettings()">Save</button>
-            <button onclick="closeSettings()" style="background:none; color:var(--text-dim); margin-top:10px">Close</button>
+            <p id="display-my-id" style="font-size: 11px; color: var(--text-dim); margin: 15px 0; background: #000; padding: 10px; border-radius: 8px; cursor: pointer;"></p>
+            <button id="btn-save" onclick="applySettings()"></button>
+            <button id="btn-nuke" class="btn-danger" onclick="nukeAccount()"></button>
+            <button class="btn-secondary" style="background:none" id="btn-cancel" onclick="closeModal('modal-settings')"></button>
         </div>
     </div>
 
     <div class="app-container">
-        <aside class="sidebar" id="sidebar">
-            <div class="side-header">
-                <div class="profile-mini" onclick="openSettings()">
-                    <div id="my-avatar" class="avatar">?</div>
-                    <div>
-                        <div id="my-nickname" style="font-weight: 800;">Nickname</div>
-                        <div style="font-size: 10px; color: var(--text-dim);">My Profile & Settings</div>
-                    </div>
-                </div>
-                <div style="display:flex; gap:8px;">
-                    <input type="text" id="target-id" placeholder="Paste ID..." style="margin:0; font-size:13px;">
-                    <button onclick="connectToPeer()" style="width:50px">+</button>
+        <aside class="sidebar">
+            <div class="profile-bar" onclick="openSettings()">
+                <div class="avatar" id="my-avatar">?</div>
+                <div style="flex:1; overflow:hidden">
+                    <b id="my-name-label">...</b>
+                    <span id="my-status-label" style="font-size:10px; color:var(--text-dim); display:block"></span>
                 </div>
             </div>
-            <div class="contact-list" id="contacts-container"></div>
+            <div style="padding: 0 20px 20px;">
+                <input type="text" id="conn-id" style="margin-bottom:5px">
+                <button id="btn-add-contact" onclick="connectFriend()"></button>
+            </div>
+            <div id="contact-list-ui" style="flex:1; overflow-y:auto"></div>
         </aside>
 
-        <main class="chat-main" id="chat-screen">
+        <main class="main-chat" id="chat-window">
             <div class="chat-header">
-                <button class="back-btn" onclick="closeChat()">←</button>
-                <div id="active-avatar" class="avatar" style="width:40px; height:40px">?</div>
-                <div>
-                    <b id="active-nick">Select chat</b>
-                    <div id="active-id" style="font-size:10px; color:var(--text-dim)">Encrypted P2P</div>
+                <button class="back-btn" onclick="exitChat()">←</button>
+                <div class="avatar" id="chat-avatar" onclick="showPeerInfo()">?</div>
+                <div style="flex:1; cursor: pointer;" onclick="showPeerInfo()">
+                    <b id="chat-user-name">...</b>
+                    <div id="chat-user-id-label" style="font-size:10px; color:var(--text-dim)"></div>
                 </div>
             </div>
-            <div id="msg-box" class="msg-container"></div>
-            <div class="input-bar">
-                <input type="file" id="media-input" hidden onchange="sendImage(this)">
-                <button onclick="document.getElementById('media-input').click()" style="width:50px; background:var(--panel); color:white">+</button>
-                <input type="text" id="msg-input" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()" style="width:80px">Send</button>
+            <div class="messages" id="messages-ui"></div>
+            <div class="input-area">
+                <input type="file" id="chat-file" hidden onchange="sendImage(this)">
+                <button onclick="document.getElementById('chat-file').click()" style="width:50px; background:#222; color:#fff">+</button>
+                <input type="text" id="msg-input" onkeypress="if(event.key==='Enter') doSend()">
+                <button id="btn-send" onclick="doSend()" style="width:85px"></button>
             </div>
         </main>
     </div>
 
     <script>
-        let peer, conn;
-        let myData = JSON.parse(localStorage.getItem('dg_v5_profile')) || { nickname: '', avatar: '', id: null };
-        let history = JSON.parse(localStorage.getItem('dg_v5_history')) || {};
-        let activePeerId = null;
+        const i18n = {
+            ru: {
+                authDesc: "Ваш никнейм станет вашим постоянным ID",
+                regNick: "Введите ваш никнейм...",
+                btnCreate: "Создать аккаунт",
+                setTitle: "Настройки",
+                btnPhoto: "Сменить фото",
+                setNick: "Изменить имя",
+                btnSave: "Сохранить",
+                btnNuke: "Удалить аккаунт",
+                btnCancel: "Отмена",
+                myStatus: "Профиль и настройки",
+                addContact: "Найти контакт",
+                friendId: "ID друга...",
+                selectChat: "Выберите чат",
+                chatInfo: "Нажмите для инфо",
+                btnSend: "Отправить",
+                copyId: "Ваш ID (нажмите, чтобы скопировать)",
+                confirmNuke: "ВНИМАНИЕ: Все данные будут удалены. Продолжить?",
+                copied: "ID скопирован!"
+            },
+            en: {
+                authDesc: "Your nickname will be your permanent ID",
+                regNick: "Enter your nickname...",
+                btnCreate: "Create Account",
+                setTitle: "Settings",
+                btnPhoto: "Change Photo",
+                setNick: "Change Display Name",
+                btnSave: "Save Changes",
+                btnNuke: "Delete Account",
+                btnCancel: "Cancel",
+                myStatus: "Profile & Settings",
+                addContact: "Add Contact",
+                friendId: "Friend ID...",
+                selectChat: "Select a chat",
+                chatInfo: "Click for info",
+                btnSend: "Send",
+                copyId: "Your ID (click to copy)",
+                confirmNuke: "WARNING: All data will be deleted. Continue?",
+                copied: "ID Copied!"
+            }
+        };
 
-        // Auto-detect view on load
-        const isMobile = () => window.innerWidth <= 850;
+        let currentLang = localStorage.getItem('dg_lang') || 'ru';
+        let peer, conn, activePeerId = null;
+        let myProfile = JSON.parse(localStorage.getItem('dg_v8_profile')) || null;
+        let history = JSON.parse(localStorage.getItem('dg_v8_history')) || {};
 
-        if (myData.id) {
-            document.getElementById('auth-screen').classList.add('hidden');
-            initPeer(myData.id);
+        function setLang(l, el) {
+            currentLang = l;
+            localStorage.setItem('dg_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if(el) el.classList.add('active');
+            updateLocalization();
         }
 
-        function startApp() {
-            const raw = document.getElementById('user-nickname').value.trim();
-            if (!raw) return;
-            const safeId = "dg_" + raw.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-            myData.nickname = raw;
-            myData.id = safeId;
-            saveData();
-            document.getElementById('auth-screen').classList.add('hidden');
-            initPeer(safeId);
+        function updateLocalization() {
+            const t = i18n[currentLang];
+            document.getElementById('auth-desc').innerText = t.authDesc;
+            document.getElementById('reg-nickname').placeholder = t.regNick;
+            document.getElementById('btn-create').innerText = t.btnCreate;
+            document.getElementById('set-title').innerText = t.setTitle;
+            document.getElementById('btn-change-photo').innerText = t.btnPhoto;
+            document.getElementById('set-nickname-input').placeholder = t.setNick;
+            document.getElementById('btn-save').innerText = t.btnSave;
+            document.getElementById('btn-nuke').innerText = t.btnNuke;
+            document.getElementById('btn-cancel').innerText = t.btnCancel;
+            document.getElementById('my-status-label').innerText = t.myStatus;
+            document.getElementById('btn-add-contact').innerText = t.addContact;
+            document.getElementById('conn-id').placeholder = t.friendId;
+            document.getElementById('btn-send').innerText = t.btnSend;
+            document.getElementById('msg-input').placeholder = "...";
+            if(!activePeerId) {
+                document.getElementById('chat-user-name').innerText = t.selectChat;
+                document.getElementById('chat-user-id-label').innerText = t.chatInfo;
+            }
+            document.getElementById('l-ru').classList.toggle('active', currentLang === 'ru');
+            document.getElementById('l-en').classList.toggle('active', currentLang === 'en');
         }
 
-        function initPeer(id) {
+        if (myProfile) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            startPeer(myProfile.id);
+        }
+
+        function createAccount() {
+            const nick = document.getElementById('reg-nickname').value.trim();
+            if (!nick) return;
+            const id = "dg_" + nick.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "_" + Math.floor(Math.random()*9999);
+            myProfile = { id, nickname: nick, avatar: null };
+            localStorage.setItem('dg_v8_profile', JSON.stringify(myProfile));
+            location.reload();
+        }
+
+        function startPeer(id) {
             peer = new Peer(id);
-            peer.on('open', () => { updateUI(); renderContacts(); });
+            peer.on('open', () => { updateSidebarUI(); renderContacts(); });
             peer.on('connection', (c) => { conn = c; setupConnection(); });
-            peer.on('error', (err) => { if(err.type==='unavailable-id') { alert("Taken!"); location.reload(); } });
-        }
-
-        function updateUI() {
-            document.getElementById('my-nickname').innerText = myData.nickname;
-            updateAvatarEl('my-avatar', myData);
-        }
-
-        function connectToPeer() {
-            const tid = document.getElementById('target-id').value.trim();
-            if (!tid || tid === myData.id) return;
-            conn = peer.connect(tid, { metadata: { nickname: myData.nickname, avatar: myData.avatar } });
-            setupConnection();
+            updateLocalization();
         }
 
         function setupConnection() {
             conn.on('open', () => {
                 activePeerId = conn.peer;
-                if (!history[activePeerId]) {
-                    history[activePeerId] = { nickname: conn.metadata?.nickname || activePeerId, avatar: conn.metadata?.avatar, messages: [] };
-                }
+                if (!history[activePeerId]) history[activePeerId] = { nickname: conn.metadata?.nick || activePeerId, avatar: conn.metadata?.av, msgs: [] };
                 openChatUI();
             });
             conn.on('data', (data) => {
                 if(data.type === 'meta') {
-                    history[conn.peer].nickname = data.nickname;
-                    history[conn.peer].avatar = data.avatar;
+                    history[conn.peer].nickname = data.nick;
+                    history[conn.peer].avatar = data.av;
                 } else {
-                    saveMessage(conn.peer, data, 'theirs');
+                    saveMessage(conn.peer, 'theirs', data.content);
                 }
                 renderContacts();
-                if (activePeerId === conn.peer) renderMessages();
+                if(activePeerId === conn.peer) renderMessages();
             });
         }
 
+        function connectFriend() {
+            const fid = document.getElementById('conn-id').value.trim();
+            if (!fid || fid === myProfile.id) return;
+            conn = peer.connect(fid, { metadata: { nick: myProfile.nickname, av: myProfile.avatar } });
+            setupConnection();
+        }
+
         function openChatUI() {
-            document.getElementById('active-nick').innerText = history[activePeerId].nickname;
-            document.getElementById('active-id').innerText = "ID: " + activePeerId;
-            updateAvatarEl('active-avatar', history[activePeerId]);
-            document.getElementById('chat-screen').classList.add('active');
+            document.getElementById('chat-window').classList.add('active');
+            const user = history[activePeerId];
+            document.getElementById('chat-user-name').innerText = user.nickname;
+            document.getElementById('chat-user-id-label').innerText = "ID: " + activePeerId;
+            updateAvatarIcon('chat-avatar', user.avatar, user.nickname);
             renderMessages();
-            renderContacts();
         }
 
-        function closeChat() {
-            document.getElementById('chat-screen').classList.remove('active');
-            activePeerId = null;
-        }
-
-        function sendMessage() {
+        function doSend() {
             const input = document.getElementById('msg-input');
             if (!input.value.trim() || !conn) return;
-            const msg = { type: 'text', content: input.value };
-            conn.send(msg);
-            saveMessage(activePeerId, msg, 'mine');
+            conn.send({ content: input.value });
+            saveMessage(activePeerId, 'mine', input.value);
             input.value = "";
             renderMessages();
         }
 
-        function saveMessage(pid, msg, side) {
-            if (!history[pid]) history[pid] = { nickname: pid, messages: [] };
-            history[pid].messages.push({ ...msg, side });
-            localStorage.setItem('dg_v5_history', JSON.stringify(history));
+        function saveMessage(pid, side, content) {
+            if (!history[pid]) history[pid] = { nickname: pid, msgs: [] };
+            history[pid].msgs.push({ side, content });
+            localStorage.setItem('dg_v8_history', JSON.stringify(history));
         }
 
         function renderMessages() {
-            const box = document.getElementById('msg-box');
+            const box = document.getElementById('messages-ui');
             box.innerHTML = "";
-            (history[activePeerId]?.messages || []).forEach(m => {
-                const bubble = document.createElement('div');
-                bubble.className = `bubble ${m.side}`;
-                bubble.innerHTML = m.type === 'text' ? m.content : m.content;
-                box.appendChild(bubble);
+            (history[activePeerId]?.msgs || []).forEach(m => {
+                const div = document.createElement('div');
+                div.className = `bubble ${m.side}`;
+                div.innerHTML = m.content;
+                box.appendChild(div);
             });
             box.scrollTop = box.scrollHeight;
         }
 
         function renderContacts() {
-            const container = document.getElementById('contacts-container');
-            container.innerHTML = "";
+            const list = document.getElementById('contact-list-ui');
+            list.innerHTML = "";
             Object.keys(history).forEach(id => {
-                const u = history[id];
-                const el = document.createElement('div');
-                el.className = `contact-item ${activePeerId === id ? 'active' : ''}`;
-                el.onclick = () => { activePeerId = id; conn = peer.connect(id); setupConnection(); };
-                el.innerHTML = `<div class="avatar">${u.nickname[0].toUpperCase()}</div><div><b>${u.nickname}</b></div>`;
-                container.appendChild(el);
+                const div = document.createElement('div');
+                div.className = `contact-item ${activePeerId === id ? 'active' : ''}`;
+                div.onclick = () => { activePeerId = id; conn = peer.connect(id, { metadata: { nick: myProfile.nickname, av: myProfile.avatar } }); setupConnection(); };
+                div.innerHTML = `<div class="avatar">${history[id].nickname[0].toUpperCase()}</div><b>${history[id].nickname}</b>`;
+                list.appendChild(div);
             });
         }
 
-        // Settings Logic
-        function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateAvatarEl('settings-avatar', myData); }
-        function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
-        function saveSettings() {
-            myData.nickname = document.getElementById('edit-nickname').value || myData.nickname;
-            saveData(); updateUI(); closeSettings();
-            if(conn) conn.send({type:'meta', nickname: myData.nickname, avatar: myData.avatar});
+        function openSettings() {
+            document.getElementById('modal-settings').style.display = 'flex';
+            document.getElementById('set-nickname-input').value = myProfile.nickname;
+            document.getElementById('display-my-id').innerText = i18n[currentLang].copyId + ": " + myProfile.id;
+            document.getElementById('display-my-id').onclick = () => { navigator.clipboard.writeText(myProfile.id); alert(i18n[currentLang].copied); }
+            updateAvatarIcon('set-avatar-preview', myProfile.avatar, myProfile.nickname);
         }
-        function updateAvatar(input) {
+
+        function applySettings() {
+            myProfile.nickname = document.getElementById('set-nickname-input').value.trim() || myProfile.nickname;
+            localStorage.setItem('dg_v8_profile', JSON.stringify(myProfile));
+            updateSidebarUI();
+            closeModal('modal-settings');
+            if(conn) conn.send({type: 'meta', nick: myProfile.nickname, av: myProfile.avatar});
+        }
+
+        function nukeAccount() {
+            if(confirm(i18n[currentLang].confirmNuke)) { localStorage.clear(); location.reload(); }
+        }
+
+        function processAvatar(input) {
             const reader = new FileReader();
-            reader.onload = (e) => { myData.avatar = e.target.result; updateAvatarEl('settings-avatar', myData); };
+            reader.onload = (e) => { myProfile.avatar = e.target.result; updateAvatarIcon('set-avatar-preview', myProfile.avatar, myProfile.nickname); };
             reader.readAsDataURL(input.files[0]);
         }
-        function updateAvatarEl(id, data) {
-            const el = document.getElementById(id);
-            if (data.avatar) el.innerHTML = `<img src="${data.avatar}">`;
-            else el.innerText = data.nickname ? data.nickname[0].toUpperCase() : '?';
-        }
+
         function sendImage(input) {
             const reader = new FileReader();
             reader.onload = () => {
-                const msg = { type: 'img', content: `<img src="${reader.result}" style="width:100%; border-radius:10px">` };
-                conn.send(msg); saveMessage(activePeerId, msg, 'mine'); renderMessages();
+                const img = `<img src="${reader.result}" style="width:100%; border-radius:10px">`;
+                conn.send({ content: img });
+                saveMessage(activePeerId, 'mine', img);
+                renderMessages();
             };
             reader.readAsDataURL(input.files[0]);
         }
-        function saveData() { localStorage.setItem('dg_v5_profile', JSON.stringify(myData)); }
+
+        function updateSidebarUI() {
+            document.getElementById('my-name-label').innerText = myProfile.nickname;
+            updateAvatarIcon('my-avatar', myProfile.avatar, myProfile.nickname);
+        }
+
+        function updateAvatarIcon(id, src, nick) {
+            const el = document.getElementById(id);
+            if(src) el.innerHTML = `<img src="${src}">`;
+            else el.innerText = nick ? nick[0].toUpperCase() : '?';
+        }
+
+        function exitChat() { document.getElementById('chat-window').classList.remove('active'); activePeerId = null; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function showPeerInfo() { if(activePeerId) alert("ID: " + activePeerId); }
+        
+        updateLocalization();
     </script>
 </body>
 </html>
