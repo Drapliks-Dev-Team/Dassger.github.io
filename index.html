@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dassger Messenger</title>
+    <style>
+        :root {
+            --bg-main: #0a0a0a;
+            --bg-sidebar: #141414;
+            --bg-chat: #0f0f0f;
+            --accent: #e0e0e0;
+            --glass: rgba(255, 255, 255, 0.03);
+            --text: #ffffff;
+            --text-dim: #777777;
+            --error: #ff4b4b;
+            --radius: 12px;
+            --anim: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-main); color: var(--text); height: 100vh; overflow: hidden; }
+
+        /* --- AUTH & PROFILE --- */
+        .overlay {
+            position: fixed; inset: 0; background: var(--bg-main);
+            display: flex; align-items: center; justify-content: center; z-index: 1000;
+        }
+
+        .auth-card {
+            background: var(--bg-sidebar); padding: 40px; border-radius: 24px;
+            width: 100%; max-width: 380px; text-align: center;
+            border: 1px solid var(--glass); animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        input {
+            width: 100%; padding: 14px; margin: 10px 0; background: #1a1a1a;
+            border: 1px solid #222; border-radius: var(--radius); color: white; outline: none;
+        }
+
+        button {
+            width: 100%; padding: 14px; margin-top: 10px; cursor: pointer;
+            border-radius: var(--radius); border: none; font-weight: 600;
+            background: var(--accent); color: black; transition: var(--anim);
+        }
+
+        button:hover { transform: scale(1.02); opacity: 0.9; }
+        .btn-ghost { background: transparent; color: var(--text-dim); }
+
+        /* --- MAIN LAYOUT --- */
+        .app-container { display: flex; height: 100vh; width: 100vw; }
+
+        .sidebar {
+            width: 380px; background: var(--bg-sidebar);
+            border-right: 1px solid var(--glass); display: flex; flex-direction: column;
+        }
+
+        .side-header { padding: 25px 20px; }
+        .logo { font-size: 24px; font-weight: 800; letter-spacing: -1px; margin-bottom: 20px; }
+        
+        .search-box { position: relative; }
+        .search-box input { background: #1a1a1a; padding-left: 15px; font-size: 14px; }
+
+        .contacts-scroll { flex: 1; overflow-y: auto; }
+        .contact-item {
+            padding: 15px 20px; display: flex; align-items: center;
+            cursor: pointer; transition: var(--anim); border-left: 3px solid transparent;
+        }
+        .contact-item:hover { background: var(--glass); }
+        .contact-item.active { background: #1a1a1a; border-left-color: var(--accent); }
+
+        .avatar {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: #333; margin-right: 15px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; flex-shrink: 0; border: 1px solid var(--glass);
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- CHAT AREA --- */
+        .chat-view { flex: 1; display: flex; flex-direction: column; background: var(--bg-chat); position: relative; }
+        
+        .chat-header {
+            padding: 15px 25px; background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px); display: flex; align-items: center;
+            border-bottom: 1px solid var(--glass); z-index: 10;
+        }
+
+        .messages-list { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        
+        .msg-bubble {
+            max-width: 70%; padding: 12px 16px; border-radius: 18px;
+            font-size: 15px; line-height: 1.4; animation: pop 0.2s ease;
+        }
+        @keyframes pop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .msg-mine { align-self: flex-end; background: var(--accent); color: black; border-bottom-right-radius: 4px; }
+        .msg-theirs { align-self: flex-start; background: #1e1e1e; color: white; border-bottom-left-radius: 4px; }
+        
+        .msg-img { max-width: 100%; border-radius: 10px; margin-top: 5px; cursor: pointer; }
+
+        .chat-input-area { padding: 20px; display: flex; gap: 12px; align-items: center; background: var(--bg-chat); }
+        
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .back-btn { display: none; margin-right: 15px; font-size: 20px; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; }
+            .chat-view { position: fixed; inset: 0; transform: translateX(100%); transition: var(--anim); }
+            .chat-view.active { transform: translateX(0); }
+            .back-btn { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen" class="overlay">
+        <div class="auth-card">
+            <div class="logo">Dassger</div>
+            <p style="color:var(--text-dim); margin-bottom: 20px;">Secure minimalist messaging</p>
+            <input type="text" id="auth-username" placeholder="Username">
+            <input type="password" id="auth-password" placeholder="Password">
+            <button onclick="handleLogin()">Login / Register</button>
+        </div>
+    </div>
+
+    <div id="profile-screen" class="overlay hidden">
+        <div class="auth-card">
+            <h2>Your Profile</h2>
+            <div style="margin: 20px 0;">
+                <div id="profile-avatar-view" class="avatar" style="width:100px; height:100px; margin: 0 auto 10px; font-size: 32px;"></div>
+                <input type="file" id="avatar-file" hidden accept="image/*" onchange="uploadAvatar(this)">
+                <button class="btn-ghost" onclick="document.getElementById('avatar-file').click()">Change Photo</button>
+            </div>
+            <input type="text" id="profile-name" placeholder="Display Name">
+            <button onclick="saveProfile()">Save Changes</button>
+            <button class="btn-ghost" style="color:var(--error)" onclick="deleteAccount()">Delete Account</button>
+            <button class="btn-ghost" onclick="toggleProfile(false)">Back</button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="side-header">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <div class="logo" style="margin:0">Dassger</div>
+                    <div id="my-avatar" class="avatar" style="width:35px; height:35px; cursor:pointer" onclick="toggleProfile(true)"></div>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search people..." oninput="renderContacts()">
+                </div>
+            </div>
+            <div class="contacts-scroll" id="contacts-list"></div>
+            <button class="btn-ghost" onclick="logout()">Logout</button>
+        </aside>
+
+        <main class="chat-view" id="chat-view">
+            <div class="chat-header">
+                <span class="back-btn" onclick="closeChat()">←</span>
+                <div id="active-avatar" class="avatar" style="width:35px; height:35px;"></div>
+                <b id="active-name">Select Contact</b>
+            </div>
+            <div class="messages-list" id="msg-container">
+                <div style="margin:auto; color:var(--text-dim); text-align:center">
+                    <p>Welcome to Dassger.</p>
+                    <small>Start a conversation from the sidebar.</small>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="file" id="media-file" hidden accept="image/*" onchange="sendMedia(this)">
+                <button style="width:45px" onclick="document.getElementById('media-file').click()">+</button>
+                <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMsg()">
+                <button style="width:80px" onclick="sendMsg()">Send</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- ДАННЫЕ (LocalStorage) ---
+        let users = JSON.parse(localStorage.getItem('dg_users')) || {};
+        let currentUser = JSON.parse(localStorage.getItem('dg_current')) || null;
+        let chats = JSON.parse(localStorage.getItem('dg_chats')) || {};
+        let activePeer = null;
+
+        // --- AUTH ---
+        function handleLogin() {
+            const user = document.getElementById('auth-username').value.trim().toLowerCase();
+            const pass = document.getElementById('auth-password').value.trim();
+            if(!user || !pass) return alert("Fill all fields");
+
+            if(users[user]) {
+                if(users[user].pass !== pass) return alert("Wrong password");
+                currentUser = users[user];
+            } else {
+                currentUser = { login: user, pass: pass, name: user, avatar: null };
+                users[user] = currentUser;
+            }
+            save();
+            location.reload();
+        }
+
+        function logout() {
+            localStorage.removeItem('dg_current');
+            location.reload();
+        }
+
+        function deleteAccount() {
+            if(confirm("Permanently delete your account?")) {
+                delete users[currentUser.login];
+                save();
+                logout();
+            }
+        }
+
+        // --- PROFILE ---
+        function toggleProfile(show) {
+            const screen = document.getElementById('profile-screen');
+            if(show) {
+                document.getElementById('profile-name').value = currentUser.name;
+                updateAvatarDiv('profile-avatar-view', currentUser);
+                screen.classList.remove('hidden');
+            } else screen.classList.add('hidden');
+        }
+
+        function uploadAvatar(input) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentUser.avatar = e.target.result;
+                updateAvatarDiv('profile-avatar-view', currentUser);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function saveProfile() {
+            currentUser.name = document.getElementById('profile-name').value;
+            users[currentUser.login] = currentUser;
+            save();
+            renderContacts();
+            updateAvatarDiv('my-avatar', currentUser);
+            toggleProfile(false);
+        }
+
+        // --- CHAT LOGIC ---
+        function renderContacts() {
+            const list = document.getElementById('contacts-list');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            list.innerHTML = "";
+
+            Object.values(users).forEach(u => {
+                if(u.login === currentUser.login) return;
+                if(!u.name.toLowerCase().includes(search)) return;
+
+                const div = document.createElement('div');
+                div.className = `contact-item ${activePeer === u.login ? 'active' : ''}`;
+                div.onclick = () => openChat(u.login);
+                
+                const avatarHTML = u.avatar ? `<img src="${u.avatar}">` : u.name[0].toUpperCase();
+                
+                div.innerHTML = `
+                    <div class="avatar">${avatarHTML}</div>
+                    <div style="flex:1">
+                        <div style="font-weight:600">${u.name}</div>
+                        <div style="font-size:12px; color:var(--text-dim)">@${u.login}</div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function openChat(login) {
+            activePeer = login;
+            document.getElementById('chat-view').classList.add('active');
+            document.getElementById('active-name').innerText = users[login].name;
+            updateAvatarDiv('active-avatar', users[login]);
+            renderMessages();
+            renderContacts();
+        }
+
+        function closeChat() {
+            document.getElementById('chat-view').classList.remove('active');
+        }
+
+        function sendMsg() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if(!text || !activePeer) return;
+            pushToChat({ type: 'text', content: text });
+            input.value = "";
+        }
+
+        function sendMedia(input) {
+            if(!input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = (e) => pushToChat({ type: 'img', content: e.target.result });
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function pushToChat(msg) {
+            const chatId = [currentUser.login, activePeer].sort().join('__');
+            if(!chats[chatId]) chats[chatId] = [];
+            
+            chats[chatId].push({
+                from: currentUser.login,
+                ...msg,
+                date: Date.now()
+            });
+            save();
+            renderMessages();
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('msg-container');
+            container.innerHTML = "";
+            const chatId = [currentUser.login, activePeer].sort().join('__');
+            const history = chats[chatId] || [];
+
+            history.forEach(m => {
+                const bubble = document.createElement('div');
+                bubble.className = `msg-bubble ${m.from === currentUser.login ? 'msg-mine' : 'msg-theirs'}`;
+                
+                if(m.type === 'text') bubble.innerText = m.content;
+                else if(m.type === 'img') {
+                    const img = document.createElement('img');
+                    img.src = m.content;
+                    img.className = 'msg-img';
+                    bubble.appendChild(img);
+                }
+                container.appendChild(bubble);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- HELPERS ---
+        function save() {
+            localStorage.setItem('dg_users', JSON.stringify(users));
+            localStorage.setItem('dg_chats', JSON.stringify(chats));
+            localStorage.setItem('dg_current', JSON.stringify(currentUser));
+        }
+
+        function updateAvatarDiv(id, user) {
+            const el = document.getElementById(id);
+            if(user.avatar) el.innerHTML = `<img src="${user.avatar}">`;
+            else el.innerText = user.name[0].toUpperCase();
+        }
+
+        // Инициализация
+        if(currentUser) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            updateAvatarDiv('my-avatar', currentUser);
+            renderContacts();
+        }
+    </script>
+</body>
+</html>
